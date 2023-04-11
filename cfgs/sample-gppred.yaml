@@ -41,16 +41,16 @@ val_loader:
 # TRAINER 
 trainer:
   max_saved_ckpts: 3
-  init_tf_rate: 0.80
+  init_tf_rate: 0.85
   optimizer:
   # using AdamW
-    lr: 0.001
-    weight_decay: 0.05
+    lr: 5.0e-4
+    weight_decay: 0.01
     amsgrad: true
   criterion:
   # using cross entropy without reduction
     reduction: 'none'
-    label_smoothing: 0.1
+    label_smoothing: 0.0
   scaler:
     use: true
   lr_scheduler:
@@ -62,7 +62,7 @@ trainer:
       patience: 5
       min_lr: 1.0e-7
   tf_scheduler:
-    use: false
+    use: true
     min_init_epochs: 20
     min_tf_rate: 0.5
     interval: 0.1
@@ -77,13 +77,13 @@ exp:
     use: false
     ckpt: 
   annotation:
-  epoch: 20
+  epoch: 50
   wandb:
-    use: 
+    use: false
     configs:
       reinit: true
-      project: 
-      entity: 
+      project: gppred
+      entity: Astromsoc
   
 
 # INFERENCE MODEL ARCHITECTURE

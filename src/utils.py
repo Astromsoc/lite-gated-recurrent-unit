@@ -61,7 +61,6 @@ class GPDatasetWithLabels(Dataset):
         # add beginning, ending & padding symbols
         self.gp2idx['<sos>'] = len(self.gp2idx)
         self.gp2idx['<eos>'] = len(self.gp2idx)
-        self.gp2idx['<pad>'] = len(self.gp2idx)
         self.chr2idx['<pad>'] = len(self.chr2idx)
         # reverse dict (using list)
         self.idx2gp = list(self.gp2idx.keys())
@@ -100,7 +99,7 @@ class GPDatasetWithLabels(Dataset):
         outlens = [len(u) for u in outputs]
         # pad both inputs & outputss
         inputs = pad_sequence(inputs, batch_first=True, padding_value=self.chr2idx['<pad>'])
-        outputs = pad_sequence(outputs, batch_first=True, padding_value=self.gp2idx['<pad>'])
+        outputs = pad_sequence(outputs, batch_first=True, padding_value=self.gp2idx['<eos>'])
         # in order: X, y, X_lens, y_lens
         return (inputs, outputs, 
                 torch.tensor(inlens, dtype=torch.long), 

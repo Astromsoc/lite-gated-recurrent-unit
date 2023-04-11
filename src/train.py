@@ -50,6 +50,8 @@ class Trainer:
                                      'min': self.cfgs.tf_scheduler.min_tf_rate,
                                      'luepoch': -1, 'luld': float('inf')})
         self.idx_dicts = {'gp': gp2idx, 'chr2idx': chr2idx}
+        # take out <eos> for faster reference
+        self.dec_eos_idx = gp2idx['<eos>']
         self.dec_num_cls = len(gp2idx)
         self.device = device
         # other records
@@ -104,11 +106,21 @@ class Trainer:
         return dec_masks, dec_masks.sum()
     
 
-    @staticmethod
-    def compute_ld(hyp, ref):
-        batch_size, total_ld = len(ref), 0
+    def compute_ld(self, hyps, refs):
+        """
+            REQUIRING both hypothesis and reference inputs don't have <sos> tags.
+        """
+        batch_size, total_ld = len(refs), 0
         for i in range(batch_size):
-            total_ld += Levenshtein.distance(hyp[i], ref[i])
+            # truncate before the first <eos> tag
+            hyp, ref = list(), list()
+            for t in hyps[i].tolist():
+                if t == self.dec_eos_idx: break
+                hyp.append(t)
+            for t in refs[i].tolist():
+                if t == self.dec_eos_idx: break
+                ref.append(t)
+            total_ld += Levenshtein.distance(hyp, ref)
         return total_ld / batch_size
 
 
@@ -387,7 +399,7 @@ def main(args):
     configs.torch_model.num_inp = len(train_dataset.chr2idx)
     configs.torch_model.num_cls = len(train_dataset.gp2idx)
     configs.torch_model.enc_pad_idx = train_dataset.chr2idx['<pad>']
-    configs.torch_model.dec_pad_idx = train_dataset.gp2idx['<pad>']
+    configs.torch_model.dec_pad_idx = train_dataset.gp2idx['<eos>']
     # initiate model
     model = TorchL2ROneLayerEncDecGruSeqPred(configs=configs.torch_model).to(device)
     
