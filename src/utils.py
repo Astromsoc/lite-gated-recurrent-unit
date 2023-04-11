@@ -6,7 +6,7 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Apr 8, 2023
+        Apr 11, 2023
 """
 
 
@@ -102,6 +102,6 @@ class GPDatasetWithLabels(Dataset):
         inputs = pad_sequence(inputs, batch_first=True, padding_value=self.chr2idx['<pad>'])
         outputs = pad_sequence(outputs, batch_first=True, padding_value=self.gp2idx['<pad>'])
         # in order: X, y, X_lens, y_lens
-        return inputs, outputs, torch.tensor(inlens), torch.tensor(outlens)
-
-
+        return (inputs, outputs, 
+                torch.tensor(inlens, dtype=torch.long), 
+                torch.tensor(outlens, dtype=torch.long))

@@ -2,6 +2,10 @@
 # (grapheme, phoneme) pair predictions
 
 
+# REPLICABILITY
+SEED: 2023
+
+
 # FILEPATHS
 train_filepath: data/train_mapped.pkl
 val_filepath: data/val_mapped.pkl
@@ -9,39 +13,33 @@ gp2idx_filepath: data/gp2idx.txt
 chr2idx_filepath: data/chr2idx.txt
 
 
-# MODEL ARCHITECTURE
-lite_model:
-  input_dim: 64
-  hidden_dim: 128
-  # either make init-h trainable or always 0
-  #   choices: ["zero-trainable", "zero-frozen", "random"]
-  inith_opt: "zero-frozen"
-
+# TORCH MODEL
 torch_model:
-  enc_emb_dim: 64
-  dec_emb_dim: 64
+  enc_emb_dim: 128
+  dec_emb_dim: 128
   encgru:
-    hidden_size: 32
+    hidden_size: 256
     batch_first: true
-    dropout: 0
   decgru:
-    hidden_size: 32
+    hidden_size: 256
+  cls_lin_dim: 512
   max_steps: 35
 
 
 # DATA LOADERS
 train_loader:
-  batch_size: 4
+  batch_size: 1024
   shuffle: true
   num_workers: 4
 val_loader:
-  batch_size: 4
+  batch_size: 1024
   shuffle: false
   num_workers: 4
 
 
 # TRAINER 
 trainer:
+  max_saved_ckpts: 3
   init_tf_rate: 1.0
   optimizer:
   # using AdamW
@@ -50,7 +48,7 @@ trainer:
     amsgrad: true
   criterion:
   # using cross entropy without reduction
-    reduce: False
+    reduction: 'none'
     label_smoothing: 0.1
   scaler:
     use: true
@@ -71,9 +69,26 @@ trainer:
     use: false
 
 
+# EXPERIMENTS
 exp:
+  folder: exp/some-name
   finetune:
     use: false
     ckpt: 
   annotation:
-  epoch: 3
+  epoch: 50
+  wandb:
+    use: false
+    configs:
+      reinit: true
+      project: 
+      entity: 
+  
+
+# INFERENCE MODEL ARCHITECTURE
+lite_model:
+  input_dim: 64
+  hidden_dim: 128
+  # either make init-h trainable or always 0
+  #   choices: ["zero-trainable", "zero-frozen", "random"]
+  inith_opt: "zero-frozen"

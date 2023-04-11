@@ -6,7 +6,7 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Apr 6, 2023
+        Apr 11, 2023
 """
 
 import numpy as np
@@ -237,39 +237,49 @@ class TorchL2ROneLayerEncDecGruSeqPred(nn.Module):
                               bidirectional=False,
                               **self.configs.encgru.__dict__)
         self.dec_gru = nn.GRUCell(input_size=self.configs.dec_emb_dim,
-                                  **self.configs.decgru.__dict__)
-        self.cls = nn.Linear(in_features=self.configs.decgru.hidden_size,
-                             out_features=self.configs.num_cls)
+                                  hidden_size=self.configs.decgru.hidden_size)
+        self.cls = nn.Sequential(
+            nn.Linear(in_features=self.configs.decgru.hidden_size,
+                      out_features=self.configs.cls_lin_dim),
+            nn.GELU(),
+            nn.Linear(in_features=self.configs.cls_lin_dim,
+                      out_features=self.configs.num_cls)
+        )
     
 
     def forward(self, 
-                word_chr_ids,
-                golden_gp_ids: torch.tensor=None,
+                input_ids: torch.tensor,
+                input_lens: torch.tensor,
+                golden_output_ids: torch.tensor=None,
                 tf_rate: float=0.0):
         """
             Forward input: 
-                word_chr_ids: character ids of words
+                input_ids: input token ids, eg. character ids of words
                     shape: (batch_size, padded_input_seq_len)
-                golden_gp_ids: (grapheme, phoneme) ids
+                input_lens: input token lengths, eg. character counts of words
+                golden_output_ids: output token ids, eg. (grapheme, phoneme) ids
                     shape: (batch_size, padded_output_seq_len)
                 tf_fate: teacher forcing rate
                     dtype: float
         """
         # ENC: obtain input encodings (last step)
-        enc = self.enc_emb(word_chr_ids)
+        enc = self.enc_emb(input_ids)
         # (batch_size, padded_input_seq_len, emb_dim)
-        enc = self.enc_gru(enc)[0][:, -1, :]
+        enc = self.enc_gru(enc)[0]
+        # (batch_size * emb_dim, padded_input_seq_len)
+        enc = torch.stack([enc[i, input_lens[i] - 1, :] for i in range(len(enc))], dim=0)
         # (batch_size, encgru_hidden_size)
 
         # set maximum number of decoding iterations
-        NUMSTEPS = golden_gp_ids.size(1) if self.training else self.configs.max_len
+        NUMSTEPS = golden_output_ids.size(1) if self.training else self.configs.max_steps
 
         # DEC: obtain (g, p) index for each time step
         full_dec_logits = list()
         # initial hidden state: hidden information conpressed to the last time step
         dec_h = enc
         # initial inputs: definitely initial idx for whatever mode / tf_rate
-        dec_x = torch.ones_like(golden_gp_ids[:, 0], requires_grad=False) * self.init_dec_idx
+        dec_x = torch.ones_like(input_ids[:, 0], requires_grad=False) * self.init_dec_idx
+        # (batch_size, )
         for t in range(NUMSTEPS - 1):
             # obtain the embeddings of current input (last-step gp idx)
             dec_xemb = self.dec_emb(dec_x)
@@ -277,14 +287,14 @@ class TorchL2ROneLayerEncDecGruSeqPred(nn.Module):
             dec_h = self.dec_gru(dec_xemb, dec_h)
             # (batch_size, dec_hid_dim)
             full_dec_logits.append(self.cls(dec_h))
-            # (batch_size, dec_out_dim)
+            # (batch_size, num_cls)
 
             # obtain gp idx as inputs to next step
-            if self.training and golden_gp_ids is not None and torch.rand(1).item() < tf_rate:
-                dec_x = golden_gp_ids[:, t + 1]
+            if self.training and golden_output_ids is not None and torch.rand(1).item() < tf_rate:
+                dec_x = golden_output_ids[:, t + 1]
             else:
                 dec_x = full_dec_logits[-1].argmax(dim=-1)
             # (batch_size, )
-
+        
         # output shape: (batch_size, dec_time_steps, num_cls)
         return torch.stack(full_dec_logits, dim=1)
