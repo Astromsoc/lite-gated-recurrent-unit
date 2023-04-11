@@ -225,6 +225,7 @@ class TorchL2ROneLayerEncDecGruSeqPred(nn.Module):
         # frequenly used attributes
         self.max_steps = self.configs.max_steps
         self.init_dec_idx = self.configs.init_dec_idx
+        self.take_last = self.configs.enc_take_last
         # build model layers
         self.enc_emb = nn.Embedding(num_embeddings=self.configs.num_inp,
                                     embedding_dim=self.configs.enc_emb_dim,
@@ -267,7 +268,12 @@ class TorchL2ROneLayerEncDecGruSeqPred(nn.Module):
         # (batch_size, padded_input_seq_len, emb_dim)
         enc = self.enc_gru(enc)[0]
         # (batch_size * emb_dim, padded_input_seq_len)
-        enc = torch.stack([enc[i, input_lens[i] - 1, :] for i in range(len(enc))], dim=0)
+        # OPTION 1: take out the last time step given input lengths
+        if self.take_last:
+            enc = torch.stack([enc[i, input_lens[i] - 1, :] for i in range(len(enc))], dim=0)
+        # OPTION 2: take out the last time step (with paddings convoluted potentially)
+        else:
+            enc = enc[:, -1, :]
         # (batch_size, encgru_hidden_size)
 
         # set maximum number of decoding iterations

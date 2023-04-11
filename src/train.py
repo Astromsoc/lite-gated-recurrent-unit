@@ -56,8 +56,10 @@ class Trainer:
         self.bests = {'ld': float('inf'), 'epoch': -1}
         self.best_fps = list()
         self.train_losses = list()
+        self.train_avg_losses = list()
         self.train_gradnorms = list()
         self.val_losses = list()
+        self.train_lds = list()
         self.val_lds = list()
         self.epoch = 1
         self.use_wandb = False
@@ -167,26 +169,25 @@ class Trainer:
             if self.use_wandb:
                 wandb.log({"train_loss_per_batch": train_loss_this_epoch[i],
                            "grad_norm_per_batch": grad_norm[i]})
+        tqdm_bar.close()
         # clear
         del in_ids, out_ids, in_lens, out_lens
         torch.cuda.empty_cache()
-        tqdm_bar.close()
 
         return train_loss_this_epoch.mean(), grad_norm.mean()
 
 
-
-    def eval_epoch(self):
+    def eval_some_loader(self, loader, annotation: str=""):
         # build tqdm progress bar
-        tqdm_bar = tqdm(total=len(self.val_loader), leave=False, dynamic_ncols=True,
-                        desc=f"evaluating epoch [{self.epoch:<3}]")
-        val_loss_this_epoch = np.zeros((len(self.val_loader),))
-        val_ld_this_epoch = np.zeros((len(self.val_loader),))
-        # switch to training mode
+        tqdm_bar = tqdm(total=len(loader), leave=False, dynamic_ncols=True,
+                        desc=f"evaluating epoch [{self.epoch:<3}] on [{annotation}]...")
+        loss_this_epoch = np.zeros((len(loader),))
+        ld_this_epoch = np.zeros((len(loader),))
+        # switch to evaluation mode
         self.model.eval()
         with torch.inference_mode():
             # iterate through batches
-            for i, (in_ids, out_ids, in_lens, out_lens) in enumerate(self.val_loader):
+            for i, (in_ids, out_ids, in_lens, out_lens) in enumerate(loader):
                 # take to device
                 in_ids, out_ids = in_ids.to(self.device), out_ids.to(self.device)
                 in_lens = in_lens.to(self.device)
@@ -211,24 +212,39 @@ class Trainer:
                                            out_ids[:, 1:].flatten()) 
                                            * dec_masks).sum() / valid_sum
                 # compute metrics
-                val_loss_this_epoch[i] = loss.item()
-                val_ld_this_epoch[i] = self.compute_ld(out_logits.argmax(dim=-1), 
-                                                       out_ids[:, 1:])
+                loss_this_epoch[i] = loss.item()
+                ld_this_epoch[i] = self.compute_ld(out_logits.argmax(dim=-1), 
+                                                   out_ids[:, 1:])
                 # update batch bar
-                tqdm_bar.set_postfix(val_loss=f"{val_loss_this_epoch[i]:.6f}", 
-                                     val_ld=f"{val_ld_this_epoch[i]:.2f}")
+                tqdm_bar.set_postfix(loss=f"{loss_this_epoch[i]:.6f}", 
+                                     ld=f"{ld_this_epoch[i]:.2f}")
                 tqdm_bar.update()
-                # push to wandb
-                if self.use_wandb:
-                    wandb.log({"val_loss_per_batch": val_loss_this_epoch[i],
-                               "val_ld_per_batch": val_ld_this_epoch[i]})
-        # clear
-        del in_ids, out_ids, in_lens, out_lens
-        torch.cuda.empty_cache()
+
         tqdm_bar.close()
 
-        return val_loss_this_epoch.mean(), val_ld_this_epoch.mean()
-    
+        return loss_this_epoch.mean(), ld_this_epoch.mean()
+
+
+    def eval_epoch(self):
+        # evaluate model for this epoch on training set
+        train_loss_this_epoch, train_ld_this_epoch = self.eval_some_loader(
+            loader=self.trn_loader, annotation='train'
+        )
+        val_loss_this_epoch, val_ld_this_epoch = self.eval_some_loader(
+            loader=self.val_loader, annotation='val'
+        )
+        # record
+        self.train_losses.append(train_loss_this_epoch)
+        self.train_lds.append(train_ld_this_epoch)
+        self.val_losses.append(val_loss_this_epoch)
+        self.val_lds.append(val_ld_this_epoch)
+        # push to wandb
+        if self.use_wandb:
+            wandb.log({"train_loss_per_epoch": train_loss_this_epoch,
+                       "train_ld_per_epoch": train_ld_this_epoch,
+                       "val_loss_per_epoch": val_loss_this_epoch,
+                       "val_ld_per_epoch": val_ld_this_epoch})
+
     
 
     def train(self, expcfgs: dict):
@@ -241,23 +257,21 @@ class Trainer:
         self.use_wandb = expcfgs.wandb.use
 
         while self.epoch <= expcfgs.epoch:
+            # updating model
             train_avg_loss, train_avg_grad_norm = self.train_epoch()
-            val_avg_loss, val_avg_ld = self.eval_epoch()
             # record
-            self.train_losses.append(train_avg_loss)
+            self.train_avg_losses.append(train_avg_loss)
             self.train_gradnorms.append(train_avg_grad_norm)
-            self.val_losses.append(val_avg_loss)
-            self.val_lds.append(val_avg_ld)
-            # update learning rate
-            if self.scheduler: 
-                self.scheduler.step(self.val_lds[-1])
             # push to wandb
             if self.use_wandb:
-                wandb.log({'train_loss_per_epoch': self.train_losses[-1],
+                wandb.log({'train_avg_loss_per_epoch': self.train_avg_losses[-1],
                            'train_gradnorm_per_epoch': self.train_gradnorms[-1],
-                           'val_loss_per_epoch': self.val_losses[-1],
                            'lr_per_epoch': self.optimizer.param_groups[0]['lr'],
                            'tf_rate_per_epoch': self.tf_rate.val})
+            # evaluate models
+            self.eval_epoch()
+            # update learning rate
+            if self.scheduler: self.scheduler.step(self.val_lds[-1])
             # save model
             self.save_model(expcfgs)
             # increment epoch by 1
@@ -298,6 +312,8 @@ class Trainer:
                 'best_fps': self.best_fps,
                 'bests': self.bests,
                 'train_losses': self.train_losses,
+                'train_avg_losses': self.train_avg_losses,
+                'train_lds': self.train_lds,
                 'train_gradnorms': self.train_gradnorms,
                 'val_losses': self.val_losses,
                 'val_lds': self.val_lds,
@@ -327,6 +343,8 @@ class Trainer:
         self.best_fps = loaded['best_fps']
         self.bests = loaded['bests']
         self.train_losses = loaded['train_losses']
+        self.train_avg_losses = loaded['train_avg_losses']
+        self.train_lds = loaded['train_lds']
         self.train_gradnorms = loaded['train_gradnorms']
         self.val_losses = loaded['val_losses']
         self.val_lds = loaded['val_lds']

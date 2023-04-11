@@ -15,20 +15,21 @@ chr2idx_filepath: data/chr2idx.txt
 
 # TORCH MODEL
 torch_model:
-  enc_emb_dim: 128
+  enc_emb_dim: 64
   dec_emb_dim: 128
   encgru:
-    hidden_size: 256
+    hidden_size: 512
     batch_first: true
+  enc_take_last: false
   decgru:
-    hidden_size: 256
-  cls_lin_dim: 512
+    hidden_size: 512
+  cls_lin_dim: 2048
   max_steps: 35
 
 
 # DATA LOADERS
 train_loader:
-  batch_size: 1024
+  batch_size: 512
   shuffle: true
   num_workers: 4
 val_loader:
@@ -40,7 +41,7 @@ val_loader:
 # TRAINER 
 trainer:
   max_saved_ckpts: 3
-  init_tf_rate: 1.0
+  init_tf_rate: 0.80
   optimizer:
   # using AdamW
     lr: 0.001
@@ -76,9 +77,9 @@ exp:
     use: false
     ckpt: 
   annotation:
-  epoch: 50
+  epoch: 20
   wandb:
-    use: false
+    use: 
     configs:
       reinit: true
       project: 
