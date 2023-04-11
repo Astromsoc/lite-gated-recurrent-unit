@@ -1,0 +1,79 @@
+# Sample configuration to train the lite model on
+# (grapheme, phoneme) pair predictions
+
+
+# FILEPATHS
+train_filepath: data/train_mapped.pkl
+val_filepath: data/val_mapped.pkl
+gp2idx_filepath: data/gp2idx.txt
+chr2idx_filepath: data/chr2idx.txt
+
+
+# MODEL ARCHITECTURE
+lite_model:
+  input_dim: 64
+  hidden_dim: 128
+  # either make init-h trainable or always 0
+  #   choices: ["zero-trainable", "zero-frozen", "random"]
+  inith_opt: "zero-frozen"
+
+torch_model:
+  enc_emb_dim: 64
+  dec_emb_dim: 64
+  encgru:
+    hidden_size: 32
+    batch_first: true
+    dropout: 0
+  decgru:
+    hidden_size: 32
+  max_steps: 35
+
+
+# DATA LOADERS
+train_loader:
+  batch_size: 4
+  shuffle: true
+  num_workers: 4
+val_loader:
+  batch_size: 4
+  shuffle: false
+  num_workers: 4
+
+
+# TRAINER 
+trainer:
+  init_tf_rate: 1.0
+  optimizer:
+  # using AdamW
+    lr: 0.001
+    weight_decay: 0.05
+    amsgrad: true
+  criterion:
+  # using cross entropy without reduction
+    reduce: False
+    label_smoothing: 0.1
+  scaler:
+    use: true
+  lr_scheduler:
+    use: true
+    # using ReduceOnPlateau
+    configs:
+      mode: min
+      factor: 0.5
+      patience: 5
+      min_lr: 1.0e-7
+  tf_scheduler:
+    use: false
+    min_init_epochs: 20
+    min_tf_rate: 0.5
+    interval: 0.1
+  dropout_scheduler:
+    use: false
+
+
+exp:
+  finetune:
+    use: false
+    ckpt: 
+  annotation:
+  epoch: 3
