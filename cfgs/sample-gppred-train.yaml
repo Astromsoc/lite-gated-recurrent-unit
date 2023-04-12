@@ -15,16 +15,16 @@ chr2idx_filepath: data/chr2idx.txt
 
 # TORCH MODEL
 torch_model:
-  enc_emb_dim: 64
+  enc_emb_dim: 128
   dec_emb_dim: 128
   encgru:
-    hidden_size: 512
+    hidden_size: 1024
     batch_first: true
   enc_take_last: false
   decgru:
-    hidden_size: 512
-  cls_lin_dim: 2048
-  max_steps: 35
+    hidden_size: 1024
+  cls_lin_dim: 1024
+  max_steps: 40
 
 
 # DATA LOADERS
@@ -41,11 +41,11 @@ val_loader:
 # TRAINER 
 trainer:
   max_saved_ckpts: 3
-  init_tf_rate: 0.85
+  init_tf_rate: 0.6
   optimizer:
   # using AdamW
-    lr: 5.0e-4
-    weight_decay: 0.01
+    lr: 1.0e-3
+    weight_decay: 0.05
     amsgrad: true
   criterion:
   # using cross entropy without reduction
@@ -64,32 +64,21 @@ trainer:
   tf_scheduler:
     use: true
     min_init_epochs: 20
-    min_tf_rate: 0.5
+    min_tf_rate: 0.0
     interval: 0.1
-  dropout_scheduler:
-    use: false
 
 
 # EXPERIMENTS
 exp:
-  folder: exp/some-name
+  folder: exp
   finetune:
     use: false
     ckpt: 
-  annotation:
+  annotation: finetune
   epoch: 50
   wandb:
     use: false
     configs:
       reinit: true
-      project: gppred
-      entity: Astromsoc
-  
-
-# INFERENCE MODEL ARCHITECTURE
-lite_model:
-  input_dim: 64
-  hidden_dim: 128
-  # either make init-h trainable or always 0
-  #   choices: ["zero-trainable", "zero-frozen", "random"]
-  inith_opt: "zero-frozen"
+      project: 
+      entity: 

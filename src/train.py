@@ -49,7 +49,7 @@ class Trainer:
                                      'int': self.cfgs.tf_scheduler.interval,
                                      'min': self.cfgs.tf_scheduler.min_tf_rate,
                                      'luepoch': -1, 'luld': float('inf')})
-        self.idx_dicts = {'gp': gp2idx, 'chr2idx': chr2idx}
+        self.idx_dicts = {'gp': gp2idx, 'chr': chr2idx}
         # take out <eos> for faster reference
         self.dec_eos_idx = gp2idx['<eos>']
         self.dec_num_cls = len(gp2idx)
@@ -87,12 +87,11 @@ class Trainer:
 
     def update_tf_rate(self):
         if self.cfgs.tf_scheduler.use:
-            if (self.epoch > self.tf_rate.nie and
-                self.tf_rate.val - self.tf_rate.int >= self.tf_rate.min):
+            if self.epoch > self.tf_rate.nie:
                 if self.val_lds[-1] <= self.tf_rate.luld:
                     self.tf_rate.luepoch = self.epoch
                     self.tf_rate.luld = self.val_lds[-1]
-                    self.tf_rate.val -= self.tf_rate.int
+                    self.tf_rate.val = max(self.tf_rate.val - self.tf_rate.int, self.tf_rate.min)
     
 
     def build_decout_masks(self, dec_lens: torch.tensor):
@@ -330,8 +329,10 @@ class Trainer:
                 'val_losses': self.val_losses,
                 'val_lds': self.val_lds,
                 'idx_dicts': self.idx_dicts, 
+                'tf_rate': self.tf_rate,
                 'configs': {'trainer': self.cfgs, 
-                            'exp': expcfgs}
+                            'exp': expcfgs, 
+                            'model': self.model.configs}
             }, output_filepath)
             print(f"\n[** MODEL SAVED **] Successfully saved checkpoint to [{self.best_fps[-1]}]\n")
     
@@ -347,7 +348,7 @@ class Trainer:
         # load configs
         self.cfgs = loaded['configs']['trainer']
         # init from configs
-        self.init_from_cfgs()
+        self.init_from_configs()
         # other state dicts / saved attributes
         self.model.load_state_dict(loaded['model_state_dict'])
         self.optimizer.load_state_dict(loaded['optim_state_dict'])
@@ -361,6 +362,7 @@ class Trainer:
         self.val_losses = loaded['val_losses']
         self.val_lds = loaded['val_lds']
         self.idx_dicts = loaded['idx_dicts']
+        self.tf_rate = loaded['tf_rate']
 
 
 
@@ -407,7 +409,7 @@ def main(args):
     print(model)
 
     # build trainer class
-    trainer = Trainer(cfgs=configs.trainer,  model=model, trn_loader=train_loader,
+    trainer = Trainer(cfgs=configs.trainer, model=model, trn_loader=train_loader,
                       gp2idx=train_dataset.gp2idx, chr2idx=train_dataset.chr2idx,
                       val_loader=val_loader, device=device)
 
@@ -423,6 +425,8 @@ def main(args):
                                          (f"-{configs.exp.annotation}" if configs.exp.annotation 
                                           else ""))
         wandb.init(config=configs, **configs.exp.wandb.configs.__dict__)
+        # revise exp folder with the new ablation name
+        configs.exp.folder = os.path.join(configs.exp.folder, configs.exp.wandb.configs.name)
 
     # archiving config files
     if not os.path.exists(configs.exp.folder):
@@ -437,12 +441,10 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Training model w/ PyTorch.")
-
     parser.add_argument(
-        '--cfgfp', '-f', type=str, default="cfgs/sample-gppred.yaml",
+        '--cfgfp', '-f', type=str, default="cfgs/sample-gppred-train.yaml",
         help="(str) Filepath to the training configurations."
     )
-
     args = parser.parse_args()
 
     main(args)

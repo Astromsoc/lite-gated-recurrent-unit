@@ -54,16 +54,16 @@ class GPDatasetWithLabels(Dataset):
         # load dictionaries
         for l in open(self.filepaths['gp2idx'], 'r'):
             self.parse_gp2idx_line(l)
-        self.gp2idx = {(g, p): idx for l in open(self.filepaths['gp2idx'], 'r') if l
-                                   for (g, p, idx) in [self.parse_gp2idx_line(l)]}
+        self.gp2idx  = {(g, p): idx for l in open(self.filepaths['gp2idx'], 'r') if l
+                                    for (g, p, idx) in [self.parse_gp2idx_line(l)]}
         self.chr2idx = {c: idx for l in open(self.filepaths['chr2idx'], 'r') if l
-                                   for (c, idx) in [self.parse_chr2idx_line(l)]}
+                               for (c, idx) in [self.parse_chr2idx_line(l)]}
         # add beginning, ending & padding symbols
-        self.gp2idx['<sos>'] = len(self.gp2idx)
-        self.gp2idx['<eos>'] = len(self.gp2idx)
+        self.gp2idx['<sos>']  = len(self.gp2idx)
+        self.gp2idx['<eos>']  = len(self.gp2idx)
         self.chr2idx['<pad>'] = len(self.chr2idx)
         # reverse dict (using list)
-        self.idx2gp = list(self.gp2idx.keys())
+        self.idx2gp  = list(self.gp2idx.keys())
         self.idx2chr = list(self.chr2idx.keys())
         # load datasets
         wgps = pickle.load(open(self.filepaths['dataset'], 'rb'))
@@ -95,7 +95,7 @@ class GPDatasetWithLabels(Dataset):
     def collate_fn(self, batch):
         inputs, outputs = zip(*batch)
         # obtain original lengths
-        inlens = [len(u) for u in inputs]
+        inlens  = [len(u) for u in inputs]
         outlens = [len(u) for u in outputs]
         # pad both inputs & outputss
         inputs = pad_sequence(inputs, batch_first=True, padding_value=self.chr2idx['<pad>'])
