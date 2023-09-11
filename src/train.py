@@ -6,23 +6,23 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Apr 11, 2023
+        Sep 11, 2023
 """
 
 
 
 import os
 import wandb
-import argparse
-import Levenshtein
-import numpy as np
-from tqdm import tqdm
-from ruamel.yaml import YAML
-yaml = YAML(typ='safe')
-
 import torch
 import torch.nn
-from torch.utils.data import DataLoader
+import argparse
+import Levenshtein
+import numpy            as np
+from tqdm               import tqdm
+from torch.utils.data   import DataLoader
+
+from ruamel.yaml    import YAML
+yaml = YAML(typ='safe')
 
 from src.model import *
 from src.utils import *
@@ -136,7 +136,11 @@ class Trainer:
         # iterate through batches
         for i, (in_ids, out_ids, in_lens, out_lens) in enumerate(self.trn_loader):
             # take to device
-            in_ids, out_ids = in_ids.to(self.device), out_ids.to(self.device)
+            if isinstance(in_ids, tuple):
+                in_ids  = (in_ids[0].to(self.device), in_ids[1].to(self.device))
+                out_ids = out_ids.to(self.device)
+            else:
+                in_ids, out_ids = in_ids.to(self.device), out_ids.to(self.device)
             in_lens = in_lens.to(self.device)
             # obtain logits per timestep
             out_logits = self.model(in_ids, in_lens, out_ids, self.tf_rate.val)
@@ -200,7 +204,11 @@ class Trainer:
             # iterate through batches
             for i, (in_ids, out_ids, in_lens, out_lens) in enumerate(loader):
                 # take to device
-                in_ids, out_ids = in_ids.to(self.device), out_ids.to(self.device)
+                if isinstance(in_ids, tuple):
+                    in_ids  = (in_ids[0].to(self.device), in_ids[1].to(self.device))
+                    out_ids = out_ids.to(self.device)
+                else:
+                    in_ids, out_ids = in_ids.to(self.device), out_ids.to(self.device)
                 in_lens = in_lens.to(self.device)
                 # eliminating the first <sos> token
                 dec_max_len = out_ids.size(1) - 1 
@@ -382,28 +390,33 @@ def main(args):
     torch.manual_seed(configs.SEED)
 
     # load datasets & build loaders
-    train_dataset = GPDatasetWithLabels(dataset_pkl_filepath=configs.train_filepath,
-                                        gp2idx_txt_filepath=configs.gp2idx_filepath,
-                                        chr2idx_txt_filepath=configs.chr2idx_filepath,
-                                        test_coherence=True)
-    val_dataset = GPDatasetWithLabels(dataset_pkl_filepath=configs.val_filepath,
-                                      gp2idx_txt_filepath=configs.gp2idx_filepath,
-                                      chr2idx_txt_filepath=configs.chr2idx_filepath)
-    train_loader = DataLoader(dataset=train_dataset,
-                              collate_fn=train_dataset.collate_fn,
-                              **configs.train_loader.__dict__)
-    val_loader = DataLoader(dataset=val_dataset,
-                            collate_fn=val_dataset.collate_fn,
-                            **configs.val_loader.__dict__)
+    dataset_class   = GPPOSDatasetWithLabels if args.use_pos else GPDatasetWithLabels
+    pos_kwargs      = {'pos2idx_txt_filepath': configs.pos2idx_filepath} if args.use_pos else None
+    train_dataset   = dataset_class(dataset_pkl_filepath=configs.train_filepath,
+                                    gp2idx_txt_filepath=configs.gp2idx_filepath,
+                                    chr2idx_txt_filepath=configs.chr2idx_filepath,
+                                    test_coherence=True, 
+                                    **pos_kwargs)
+    val_dataset     = dataset_class(dataset_pkl_filepath=configs.val_filepath,
+                                    gp2idx_txt_filepath=configs.gp2idx_filepath,
+                                    chr2idx_txt_filepath=configs.chr2idx_filepath,
+                                    **pos_kwargs)
+    train_loader    = DataLoader(dataset=train_dataset,
+                                 collate_fn=train_dataset.collate_fn,
+                                 **configs.train_loader.__dict__)
+    val_loader      = DataLoader(dataset=val_dataset,
+                                 collate_fn=val_dataset.collate_fn,
+                                 **configs.val_loader.__dict__)
 
     # add attributes to model configs
     configs.torch_model.init_dec_idx = train_dataset.gp2idx['<sos>']
-    configs.torch_model.num_inp = len(train_dataset.chr2idx)
-    configs.torch_model.num_cls = len(train_dataset.gp2idx)
-    configs.torch_model.enc_pad_idx = train_dataset.chr2idx['<pad>']
-    configs.torch_model.dec_pad_idx = train_dataset.gp2idx['<eos>']
+    configs.torch_model.num_inp      = len(train_dataset.chr2idx)
+    configs.torch_model.num_cls      = len(train_dataset.gp2idx)
+    configs.torch_model.enc_pad_idx  = train_dataset.chr2idx['<pad>']
+    configs.torch_model.dec_pad_idx  = train_dataset.gp2idx['<eos>']
     # initiate model
-    model = TorchL2ROneLayerEncDecGruSeqPred(configs=configs.torch_model).to(device)
+    model_class = TorchL2ROneLayerEncDecGruSeqPredWithPOS if args.use_pos else TorchL2ROneLayerEncDecGruSeqPred
+    model = model_class(configs=configs.torch_model).to(device)
     
     # print model summary (using simple prints for concerns over repeated inferrence steps)
     print(model)
@@ -415,7 +428,8 @@ def main(args):
 
     # build wandb name if used
     if configs.exp.wandb.use:
-        configs.exp.wandb.configs.name = (f"encemb-{configs.torch_model.enc_emb_dim}-"
+        configs.exp.wandb.configs.name = (f"encembchr-{configs.torch_model.enc_emb_dim_chr}-"
+                                          f"encembpos-{configs.torch_model.enc_emb_dim_pos}-"
                                           f"enchid-{configs.torch_model.encgru.hidden_size}-"
                                           f"decemb-{configs.torch_model.dec_emb_dim}-"
                                           f"dechid-{configs.torch_model.decgru.hidden_size}-"
@@ -444,6 +458,10 @@ if __name__ == '__main__':
     parser.add_argument(
         '--cfgfp', '-f', type=str, default="cfgs/sample-gppred-train.yaml",
         help="(str) Filepath to the training configurations."
+    )
+    parser.add_argument(
+        '--use_pos', '-p', action="store_true",
+        help="(bool) Whether to include POS tags as partial inputs."
     )
     args = parser.parse_args()
 

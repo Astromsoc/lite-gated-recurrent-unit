@@ -1,0 +1,88 @@
+# Sample configuration to train the lite model on
+# (grapheme, phoneme) pair predictions
+
+
+# REPLICABILITY
+SEED: 2023
+
+
+# FILEPATHS
+train_filepath:   
+val_filepath:     
+gp2idx_filepath:  
+chr2idx_filepath:  
+pos2idx_filepath: 
+
+
+# TORCH MODEL
+torch_model:
+  enc_emb_dim_chr: 128
+  enc_emb_dim_pos: 64
+  dec_emb_dim: 128
+  pos_linear: 512
+  pos_final: 128
+  encgru:
+    hidden_size: 1024
+    batch_first: true
+  enc_take_last: false
+  decgru:
+    hidden_size: 1024
+  cls_lin_dim: 1024
+  max_steps: 40
+
+
+# DATA LOADERS
+train_loader:
+  batch_size: 512
+  shuffle: true
+  num_workers: 4
+val_loader:
+  batch_size: 1024
+  shuffle: false
+  num_workers: 4
+
+
+# TRAINER 
+trainer:
+  max_saved_ckpts: 3
+  init_tf_rate: 0.6
+  optimizer:
+  # using AdamW
+    lr: 1.0e-3
+    weight_decay: 0.05
+    amsgrad: true
+  criterion:
+  # using cross entropy without reduction
+    reduction: 'none'
+    label_smoothing: 0.0
+  scaler:
+    use: true
+  lr_scheduler:
+    use: true
+    # using ReduceOnPlateau
+    configs:
+      mode: min
+      factor: 0.5
+      patience: 5
+      min_lr: 1.0e-7
+  tf_scheduler:
+    use: true
+    min_init_epochs: 20
+    min_tf_rate: 0.0
+    interval: 0.1
+
+
+# EXPERIMENTS
+exp:
+  folder: exp-pos
+  finetune:
+    use: false
+    ckpt: 
+  annotation: finetune
+  epoch: 50
+  wandb:
+    use: false
+    configs:
+      reinit: true
+      project: 
+      entity: 
