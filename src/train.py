@@ -6,7 +6,7 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Sep 11, 2023
+        Sep 12, 2023
 """
 
 
@@ -18,15 +18,13 @@ import torch.nn
 import argparse
 import Levenshtein
 import numpy            as np
+
+from src.utils          import *
+from src.models         import *
 from tqdm               import tqdm
 from torch.utils.data   import DataLoader
-
-from ruamel.yaml    import YAML
+from ruamel.yaml        import YAML
 yaml = YAML(typ='safe')
-
-from src.model import *
-from src.utils import *
-
 
 
 
@@ -391,7 +389,7 @@ def main(args):
 
     # load datasets & build loaders
     dataset_class   = GPPOSDatasetWithLabels if args.use_pos else GPDatasetWithLabels
-    pos_kwargs      = {'pos2idx_txt_filepath': configs.pos2idx_filepath} if args.use_pos else None
+    pos_kwargs      = {'pos2idx_txt_filepath': configs.pos2idx_filepath if args.use_pos else None}
     train_dataset   = dataset_class(dataset_pkl_filepath=configs.train_filepath,
                                     gp2idx_txt_filepath=configs.gp2idx_filepath,
                                     chr2idx_txt_filepath=configs.chr2idx_filepath,
@@ -466,3 +464,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
+    

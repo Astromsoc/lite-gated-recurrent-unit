@@ -1,0 +1,486 @@
+(<unk>, //)	0
+(', //)	1
+('d, AH D)	2
+('d, IH D)	3
+('ll, AH L)	4
+('m, M)	5
+('re, ER)	6
+('re, R)	7
+('s, //)	8
+('s, AH Z)	9
+('s, IH S)	10
+('s, IH Z)	11
+('s, S)	12
+('ve, AH V)	13
+('ve, IH V)	14
+('ve, V)	15
+(-, //)	16
+(<h, //)	17
+(a, //)	18
+(a, AA)	19
+(a, AE)	20
+(a, AH)	21
+(a, AO)	22
+(a, EH)	23
+(a, EY)	24
+(a, IH)	25
+(a_e, EY)	26
+(aa, AA)	27
+(aa, AH)	28
+(aa, EH)	29
+(ae, AE)	30
+(ae, AH)	31
+(ae, EH)	32
+(ae, EY)	33
+(ae, IH)	34
+(ae, IY)	35
+(aer, ER)	36
+(agh, AH)	37
+(ah, AA)	38
+(ah, AE)	39
+(ah, AH)	40
+(ai, AE)	41
+(ai, AH)	42
+(ai, AY)	43
+(ai, EH)	44
+(ai, EY)	45
+(aigh, EY)	46
+(ao, AW)	47
+(ar, AH)	48
+(ar, ER)	49
+(arr, ER)	50
+(arrh, ER)	51
+(au, AA)	52
+(au, AE)	53
+(au, AH)	54
+(au, AO)	55
+(au, AW)	56
+(au, EY)	57
+(au, OW)	58
+(augh, AA)	59
+(augh, AO)	60
+(augh, AW)	61
+(aur, ER)	62
+(aw, AA)	63
+(aw, AO)	64
+(awe, AO)	65
+(ay, AY)	66
+(ay, EH)	67
+(ay, EY)	68
+(ay, IY)	69
+(aye, AY)	70
+(aye, EY)	71
+(b, //)	72
+(b, B)	73
+(b, B IY)	74
+(bb, B)	75
+(bbl, B AH L)	76
+(bh, B)	77
+(bl, B AH L)	78
+(c, //)	79
+(c, CH)	80
+(c, K)	81
+(c, S)	82
+(c, S IY)	83
+(c, SH)	84
+(cc, CH)	85
+(cc, K)	86
+(cc, S)	87
+(cch, K)	88
+(ce, SH)	89
+(ch, //)	90
+(ch, CH)	91
+(ch, HH)	92
+(ch, K)	93
+(ch, SH)	94
+(ci, SH)	95
+(ck, K)	96
+(cl, K AH L)	97
+(cq, K)	98
+(cqu, K)	99
+(cque, K)	100
+(cz, CH)	101
+(d, //)	102
+(d, D)	103
+(d, D IY)	104
+(d, JH)	105
+(d, T)	106
+(dd, D)	107
+(ddh, D)	108
+(ddl, D AH L)	109
+(dg, JH)	110
+(dh, D)	111
+(di, JH)	112
+(dj, JH)	113
+(dl, D AH L)	114
+(ds, Z)	115
+(dt, T)	116
+(e, //)	117
+(e, AA)	118
+(e, AE)	119
+(e, AH)	120
+(e, EH)	121
+(e, EY)	122
+(e, IH)	123
+(e, IY)	124
+(e>, //)	125
+(e_e, IY)	126
+(ea, AA)	127
+(ea, AH)	128
+(ea, EH)	129
+(ea, EY)	130
+(ea, IH)	131
+(ea, IY)	132
+(ear, ER)	133
+(eau, AA)	134
+(eau, AH)	135
+(eau, OW)	136
+(eau, Y UW)	137
+(ee, EY)	138
+(ee, IH)	139
+(ee, IY)	140
+(eh, EH)	141
+(ei, AH)	142
+(ei, AY)	143
+(ei, EH)	144
+(ei, EY)	145
+(ei, IH)	146
+(ei, IY)	147
+(eigh, AY)	148
+(eigh, EY)	149
+(ej, EY)	150
+(en, AA N)	151
+(eo, AO)	152
+(eo, EH)	153
+(eo, IH)	154
+(eo, IY)	155
+(eou, OW)	156
+(er, AH)	157
+(er, ER)	158
+(er, EY)	159
+(er, R)	160
+(err, ER)	161
+(eu, OW)	162
+(eu, OY)	163
+(eu, UW)	164
+(eu, Y UH)	165
+(eu, Y UW)	166
+(eur, ER)	167
+(ew, OW)	168
+(ew, UW)	169
+(ew, Y UW)	170
+(ey, EH)	171
+(ey, EY)	172
+(ey, IY)	173
+(eye, AY)	174
+(f, EH F)	175
+(f, F)	176
+(f, V)	177
+(ff, F)	178
+(ffl, F AH L)	179
+(fh, F)	180
+(fl, F AH L)	181
+(ft, F)	182
+(g, G)	183
+(g, JH IY)	184
+(g, ZH)	185
+(gae, JH IY)	186
+(ge, JH)	187
+(ge, JH AH)	188
+(ge, JH EH)	189
+(ge, JH IH)	190
+(ge, JH IY)	191
+(gee, JH IY)	192
+(ger, ZH ER)	193
+(gg, G)	194
+(gg, JH)	195
+(ggl, G AH L)	196
+(gh, F)	197
+(gh, G)	198
+(gi, JH)	199
+(gi, JH AH)	200
+(gi, JH AY)	201
+(gi, JH IH)	202
+(gi, JH IY)	203
+(gia, JH AH)	204
+(giar, JH AA R)	205
+(giar, JH ER)	206
+(gie, JH IY)	207
+(gio, JH AH)	208
+(giou, JH AH)	209
+(gl, G AH L)	210
+(gn, N)	211
+(gn, N Y)	212
+(gu, G)	213
+(gue, G)	214
+(gy, JH AH)	215
+(gy, JH IH)	216
+(gy, JH IY)	217
+(h, //)	218
+(h, EY CH)	219
+(h, HH)	220
+(ho, AO)	221
+(hs, SH)	222
+(hu, W)	223
+(i, //)	224
+(i, AH)	225
+(i, AY)	226
+(i, I)	227
+(i, IH)	228
+(i, IY)	229
+(i, Y)	230
+(i_e, AY)	231
+(ie, AY)	232
+(ie, EH)	233
+(ie, EY)	234
+(ie, IH)	235
+(ie, IY)	236
+(ieh, IY)	237
+(ieu, UW)	238
+(ieu, Y UH)	239
+(igh, AY)	240
+(ii, IY)	241
+(in, AA N)	242
+(ir, ER)	243
+(irr, ER)	244
+(is, AY)	245
+(j, HH)	246
+(j, JH)	247
+(j, JH EY)	248
+(j, Y)	249
+(j, ZH)	250
+(k, K)	251
+(k, K EY)	252
+(kh, K)	253
+(kk, K)	254
+(kl, K AH L)	255
+(kn, N)	256
+(l, //)	257
+(l, EH L)	258
+(l, L)	259
+(le, AH L)	260
+(lf, F)	261
+(lk, K)	262
+(ll, L)	263
+(lm, M)	264
+(ln, N)	265
+(lt, //)	266
+(lv, V)	267
+(m, AH M)	268
+(m, EH M)	269
+(m, M)	270
+(mb, M)	271
+(mc, M AE K)	272
+(mc, M AH K)	273
+(mcc, M AH K)	274
+(mcg, M AH G)	275
+(mck, M AH K)	276
+(mcq, M AH K)	277
+(mm, M)	278
+(mn, M)	279
+(mn, N)	280
+(n, EH N)	281
+(n, N)	282
+(n, NG)	283
+(n't, AH N T)	284
+(ng, NG)	285
+(ngh, NG)	286
+(ngue, NG)	287
+(nh, N)	288
+(nl, N AH L)	289
+(nn, N)	290
+(o, //)	291
+(o, AA)	292
+(o, AH)	293
+(o, AO)	294
+(o, AW)	295
+(o, IH)	296
+(o, OW)	297
+(o, UH)	298
+(o, UW)	299
+(o_e, OW)	300
+(oa, AO)	301
+(oa, OW)	302
+(oar, ER)	303
+(oe, AH)	304
+(oe, AO)	305
+(oe, IY)	306
+(oe, OW)	307
+(oe, UW)	308
+(oh, AA)	309
+(oh, AH)	310
+(oh, AO)	311
+(oh, OW)	312
+(oi, AH)	313
+(oi, OY)	314
+(oi, W AA)	315
+(one, W AH N)	316
+(oo, AH)	317
+(oo, AO)	318
+(oo, OW)	319
+(oo, UH)	320
+(oo, UW)	321
+(ooh, UW)	322
+(or, ER)	323
+(orr, ER)	324
+(ou, AA)	325
+(ou, AH)	326
+(ou, AO)	327
+(ou, AW)	328
+(ou, OW)	329
+(ou, UH)	330
+(ou, UW)	331
+(ou, Y UW)	332
+(ough, AA)	333
+(ough, AO)	334
+(ough, AW)	335
+(ough, OW)	336
+(ough, UW)	337
+(our, ER)	338
+(ow, AA)	339
+(ow, AW)	340
+(ow, OW)	341
+(oy, OY)	342
+(p, //)	343
+(p, P)	344
+(p, P IY)	345
+(pf, F)	346
+(ph, F)	347
+(ph, V)	348
+(pl, P AH L)	349
+(pn, N)	350
+(pp, P)	351
+(ppl, P AH L)	352
+(ps, S)	353
+(q, K)	354
+(q, K Y UW)	355
+(qu, K)	356
+(r, AA R)	357
+(r, ER)	358
+(r, R)	359
+(re, AH R)	360
+(re, ER)	361
+(rh, R)	362
+(ro, ER)	363
+(rr, R)	364
+(s, //)	365
+(s, EH S)	366
+(s, S)	367
+(s, SH)	368
+(s, Z)	369
+(s, ZH)	370
+(s', Z)	371
+(s's, Z)	372
+(sc, S)	373
+(sc, SH)	374
+(sch, SH)	375
+(sci, SH)	376
+(sh, SH)	377
+(si, SH)	378
+(si, ZH)	379
+(sl, S AH L)	380
+(sm, Z AH M)	381
+(ss, S)	382
+(ss, SH)	383
+(ss, Z)	384
+(ssi, SH)	385
+(ssl, S AH L)	386
+(st, S)	387
+(sure, CH ER)	388
+(sz, SH)	389
+(t, //)	390
+(t, CH)	391
+(t, D)	392
+(t, SH)	393
+(t, T)	394
+(t, T IY)	395
+(te, CH)	396
+(th, //)	397
+(th, DH)	398
+(th, T)	399
+(th, TH)	400
+(ti, CH)	401
+(ti, SH)	402
+(ti, ZH)	403
+(tl, T AH L)	404
+(tsch, CH)	405
+(tsh, CH)	406
+(tt, T)	407
+(ttl, T AH L)	408
+(tw, T)	409
+(u, AH)	410
+(u, AH W)	411
+(u, EH)	412
+(u, IH)	413
+(u, UH)	414
+(u, UW)	415
+(u, W)	416
+(u, Y AH)	417
+(u, Y UH)	418
+(u, Y UW)	419
+(u_e, UW)	420
+(u_e, Y UW)	421
+(ue, AH)	422
+(ue, UH)	423
+(ue, UW)	424
+(ue, Y UW)	425
+(uh, AH)	426
+(uh, UH)	427
+(uh, UW)	428
+(uhr, ER)	429
+(ui, AH)	430
+(ui, IH)	431
+(ui, UW)	432
+(un, AO N)	433
+(uoy, OY)	434
+(ur, ER)	435
+(ur, Y ER)	436
+(urr, ER)	437
+(uu, Y UW)	438
+(uy, AY)	439
+(v, V)	440
+(v, V IY)	441
+(w, //)	442
+(w, D AH B AH L Y UW)	443
+(w, F)	444
+(w, V)	445
+(w, W)	446
+(wh, HH)	447
+(wh, W)	448
+(wr, R)	449
+(x, //)	450
+(x, EH K S)	451
+(x, G Z)	452
+(x, G ZH)	453
+(x, IH G Z)	454
+(x, K S)	455
+(x, K SH)	456
+(x, K Z)	457
+(x, Z)	458
+(xc, K S)	459
+(xi, K SH)	460
+(xi, ZH)	461
+(xs, EH K S)	462
+(xs, K S)	463
+(y, //)	464
+(y, AH)	465
+(y, AY)	466
+(y, IH)	467
+(y, IY)	468
+(y, W AY)	469
+(y, Y)	470
+(ye, AY)	471
+(yr, ER)	472
+(z, S)	473
+(z, T S)	474
+(z, Z)	475
+(z, Z IY)	476
+(z, ZH)	477
+(zi, ZH)	478
+(zl, Z AH L)	479
+(zz, T S)	480
+(zz, Z)	481
+(zzl, Z AH L)	482
+(., //)	483
+(', IH Z)	484
+(.', //)	485

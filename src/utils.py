@@ -6,7 +6,7 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Sep 11, 2023
+        Sep 12, 2023
 """
 
 
@@ -33,8 +33,8 @@ class ParamsObject(object):
 
 class GPDatasetWithLabels(Dataset):
 
-    CHRLINE_REGEX = re.compile(r"([a-z \.'<>-]+)\t([\d]+)")
-    GPLINE_REGEX = re.compile(r"\(([a-z \.'<>_-]+), ([A-Z/ ]+)\)\t([\d]+)")
+    CHRLINE_REGEX   = re.compile(r"([a-z \.'<>-]+)\t([\d]+)")
+    GPPLINE_REGEX   = re.compile(r"\(([a-z \.'<>_-]+), ([A-Z/ ]+)\)\t([\d]+)")
 
     """
         Dataset for (grapheme, phoneme) predictions, with labels
@@ -43,7 +43,8 @@ class GPDatasetWithLabels(Dataset):
                  dataset_pkl_filepath: str, 
                  gp2idx_txt_filepath: str,
                  chr2idx_txt_filepath: str,
-                 test_coherence: bool=False):
+                 test_coherence: bool=False,
+                 pos2idx_txt_filepath: str=None):
         super().__init__()
         # archiving
         self.filepaths = {
@@ -85,7 +86,7 @@ class GPDatasetWithLabels(Dataset):
         return len(self.inputs)
 
     def parse_gp2idx_line(self, gpidxline: str):
-        m = re.match(self.GPLINE_REGEX, gpidxline)
+        m = re.match(self.GPPLINE_REGEX, gpidxline)
         return m.group(1), m.group(2), int(m.group(3))
 
     def parse_chr2idx_line(self, chridxline: str):
@@ -110,13 +111,14 @@ class GPDatasetWithLabels(Dataset):
 
 class GPPOSDatasetWithLabels(Dataset):
 
-    GPLINE_REGEX    = re.compile(r"\(([a-z \.'<>_-]+), ([A-Z/ ]+)\)\t([\d]+)")
+    GPPLINE_REGEX   = re.compile(r"\(([a-z \.'<>_-]+), ([A-Z/ ]+)\)\t([\d]+)")
     CHRLINE_REGEX   = re.compile(r"([a-z \.'<>-]+)\t([\d]+)")
-    POSLINE_REGEX   = re.compile(r"(.*)\t([\d]+)")
+    POSLINE_REGEX   = re.compile(r"(.*)[(, ?)\t]([\d]+)")
 
     """
         Dataset for (grapheme, phoneme) predictions, with labels & POS tags
     """
+
     def __init__(self, 
                  dataset_pkl_filepath: str, 
                  gp2idx_txt_filepath: str,
@@ -138,7 +140,7 @@ class GPPOSDatasetWithLabels(Dataset):
                                     for (g, p, idx) in [self.parse_gp2idx_line(l)]}
         self.chr2idx = {c: idx for l in open(self.filepaths['chr2idx'], 'r') if l
                                     for (c, idx) in [self.parse_chr2idx_line(l)]}
-        self.pos2idx = {p: idx for l in open(self.filepaths['pos2idx'], 'r') if l
+        self.pos2idx = {p: idx for l in open(self.filepaths['pos2idx'], 'r') if l and not l.startswith('#')
                                     for (p, idx) in [self.parse_pos2idx_line(l)]}
         # add beginning, ending & padding symbols
         self.gp2idx['<sos>']  = len(self.gp2idx)
@@ -170,7 +172,7 @@ class GPPOSDatasetWithLabels(Dataset):
 
 
     def parse_gp2idx_line(self, gpidxline: str):
-        m = re.match(self.GPLINE_REGEX, gpidxline)
+        m = re.match(self.GPPLINE_REGEX, gpidxline)
         return m.group(1), m.group(2), int(m.group(3))
 
 

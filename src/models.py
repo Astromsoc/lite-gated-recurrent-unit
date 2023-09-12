@@ -6,7 +6,7 @@
     Written & Maintained by: 
         Astromsoc
     Last Updated at:
-        Sep 11, 2023
+        Sep 12, 2023
 """
 
 
@@ -14,8 +14,8 @@ import torch
 import torch.nn     as nn
 import numpy        as np
 
+from typing         import Dict
 from src.utils      import ParamsObject
-
 
 
 
@@ -524,19 +524,19 @@ class TorchL2ROneLayerEncDecGruSeqPredWithPOS(nn.Module):
     def __init__(self, configs: ParamsObject):
         super().__init__()
         # archiving
-        self.configs = configs
+        self.configs        = configs
         # frequenly used attributes
-        self.max_steps = self.configs.max_steps
-        self.init_dec_idx = self.configs.init_dec_idx
-        self.take_last = self.configs.enc_take_last
+        self.max_steps      = self.configs.max_steps
+        self.init_dec_idx   = self.configs.init_dec_idx
+        self.take_last      = self.configs.enc_take_last
         # build model layers
-        self.enc_emb_chr = nn.Embedding(num_embeddings=self.configs.num_inp,
-                                        embedding_dim=self.configs.enc_emb_dim_chr,
-                                        padding_idx=self.configs.enc_pad_idx)
-        self.enc_emb_pos = nn.Embedding(num_embeddings=self.configs.num_inp,
-                                        embedding_dim=self.configs.enc_emb_dim_pos,
-                                        padding_idx=self.configs.enc_pad_idx)
-        self.pos_linear = nn.Sequential(
+        self.enc_emb_chr    = nn.Embedding(num_embeddings=self.configs.num_inp,
+                                           embedding_dim=self.configs.enc_emb_dim_chr,
+                                           padding_idx=self.configs.enc_pad_idx)
+        self.enc_emb_pos    = nn.Embedding(num_embeddings=self.configs.num_inp,
+                                           embedding_dim=self.configs.enc_emb_dim_pos,
+                                           padding_idx=self.configs.enc_pad_idx)
+        self.pos_linear     = nn.Sequential(
             nn.Linear(in_features=self.configs.enc_emb_dim_pos,
                       out_features=self.configs.pos_linear),
             nn.GELU(),
@@ -560,7 +560,8 @@ class TorchL2ROneLayerEncDecGruSeqPredWithPOS(nn.Module):
             nn.Linear(in_features=self.configs.cls_lin_dim,
                       out_features=self.configs.num_cls)
         )
-    
+
+
 
     def forward(self, 
                 input_chr_ids_and_pos: tuple,
@@ -569,12 +570,12 @@ class TorchL2ROneLayerEncDecGruSeqPredWithPOS(nn.Module):
                 tf_rate: float=0.0):
         """
             Forward input: 
-                input_chr_ids_and_pos: tuple of input token ids, eg. character ids of words & POS tag id
+                input_chr_ids_and_pos:  tuple of input token ids, eg. character ids of words & POS tag id
                     shape: (batch_size, padded_input_seq_len)
-                input_lens: input token lengths, eg. character counts of words
+                input_lens:             input token lengths, eg. character counts of words
                 golden_output_ids: output token ids, eg. (grapheme, phoneme) ids
                     shape: (batch_size, padded_output_seq_len)
-                tf_fate: teacher forcing rate
+                tf_fate:                teacher forcing rate
                     dtype: float
         """
         # ENC: obtain input encodings (last step)
@@ -622,3 +623,120 @@ class TorchL2ROneLayerEncDecGruSeqPredWithPOS(nn.Module):
         
         # output shape: (batch_size, dec_time_steps, num_cls)
         return torch.stack(full_dec_logits, dim=1)
+
+
+
+    def restricted_infer_single(self, 
+                                input_chr_ids: torch.tensor,
+                                input_pos: int,
+                                c2gpidx: Dict,
+                                gpidx2glen: Dict,
+                                max_chr_len: int,
+                                left_border_idx: int,
+                                right_border_idx: int,
+                                silent_e_suffix: list,
+                                silent_e_gpids: list,
+                                vowel_gpidlists: list):
+        """
+            Forward input: 
+                input_chr_ids:          input token ids, eg. character ids of words
+                input_pos:              POS tag id
+                c2gpidx:                initial character to grapheme-phoneme idx mapping
+                gpidx2glen:             grapheme-phoneme idx to grapheme length mapping
+                max_chr_len:            maximum length of character subsequence
+                left_border_idx:        index of left border symbol (<)
+                right_border_idx:       index of right border symbol (>)
+                silent_e_suffix:        character id list of "_e" for silent e
+                silent_e_gpids:         gp ids of (e, //) and (e>, //)
+                vowel_gpidlists:          character id (single int list) of all vowels 
+        """
+        # only used for infering single word inputs
+        assert not self.training
+        input_chr_ids_list = input_chr_ids.flatten().tolist()
+        # ENC: obtain input encodings (last step)
+        # convert input POS tag
+        input_pos_idx = torch.tensor([input_pos], device=input_chr_ids.device)
+        # (1,)
+        enc_pos = self.enc_emb_pos(input_pos_idx)
+        pos_final = self.pos_linear(enc_pos)
+        # (1, pos_emb_dim)
+        enc_chr = self.enc_emb_chr(input_chr_ids)
+        enc = self.enc_gru(enc_chr)[0][:, -1, :]
+        # take out the last time step (no padding so both options are the same)
+        # (1, encgru_hidden_size)
+        # concatenate temporal outputs of characters & embeddings of POS
+        enc = torch.concat((pos_final, enc), dim=1)
+        # (1, encgru_hidden_size + pos_emb_dim)
+
+        # set maximum number of decoding iterations
+        NUMSTEPS = self.configs.max_steps
+
+        # DEC: obtain (g, p) index for each time step
+        full_dec_logits = list()
+        # initial hidden state: hidden information conpressed to the last time step
+        dec_h = enc
+        # (1, encgru_hidden_size + pos_emb_dim)
+        # initial inputs: definitely initial idx (<sos>) of characters for whatever mode / tf_rate
+        dec_x = torch.tensor([1], device=dec_h.device, requires_grad=False) * self.init_dec_idx
+        # (1, )
+        # mark the progress of how many characters are covered word
+        preds           = list()
+        chr_loc         = 0
+        silent_e        = False
+        candidates      = list()
+        # initial grapheme: potentially with left border symbol
+        for i in range(max_chr_len):
+            c = tuple([left_border_idx] + input_chr_ids_list[: i + 1])
+            if c in c2gpidx: candidates = c2gpidx[c]
+            else: break
+        # expanded search for all potential parts
+        for t in range(NUMSTEPS - 1):
+            # obtain the embeddings of current input (last-step gp idx)
+            dec_xemb = self.dec_emb(dec_x)
+            # (1, dec_emb_dim)
+            dec_h = self.dec_gru(dec_xemb, dec_h)
+            # (1, dec_hid_dim)
+            dec_logits = self.cls(dec_h)
+            # (1, num_cls)
+            # SPECIAL: obtain the most likely result for current characters (restricted)
+            for i in range(min(max_chr_len, len(input_chr_ids_list) - chr_loc)):
+                hit = False
+                slice = input_chr_ids_list[chr_loc: chr_loc + i + 1]
+                slice_tuple = tuple(slice)
+                # match: add to candidate
+                if slice_tuple in c2gpidx: 
+                    candidates += c2gpidx[slice_tuple]
+                    hit = True
+                # last character: in case of additional right border mark
+                if slice[-1] == right_border_idx and chr_loc + i == len(input_chr_ids_list) - 1:
+                    if tuple(slice[:-1]) in c2gpidx: 
+                        candidates += c2gpidx[slice_tuple]
+                        hit = True
+                # silent e: check if there's trailing "e" [ROUGH VERSION]
+                if i == 1 and slice in vowel_gpidlists and silent_e_suffix[-1] in input_chr_ids_list[chr_loc + 2:]:
+                    candidates += c2gpidx[tuple(slice + silent_e_suffix)]
+                    hit, silent_e = True, True
+                # early quit: all not matching
+                if not hit: break
+
+            # no candidates found
+            if not candidates: break
+            else:
+                dec_x_idx = candidates[torch.argmax(dec_logits[:, candidates], dim=1)]
+                # consider if current silent "e" is the trailing "e" for prev long vowels
+                if dec_x_idx in silent_e_gpids and silent_e:
+                    # update location in word but add no extra pred character
+                    chr_loc += 1
+                else:
+                    preds.append(dec_x_idx)
+                    # update the location in word
+                    chr_loc += gpidx2glen[dec_x_idx]
+            # reach the end of word: finished searching
+            if chr_loc == len(input_chr_ids_list): break
+            # clear up candidate list
+            candidates = list()
+            # update decoder input
+            dec_x = torch.tensor([dec_x_idx], device=dec_h.device)
+            
+        # output shape: (batch_size, dec_time_steps, num_cls)
+        return preds

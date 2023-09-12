@@ -7,11 +7,11 @@ SEED: 2023
 
 
 # FILEPATHS
-train_filepath:   
-val_filepath:     
-gp2idx_filepath:  
-chr2idx_filepath:  
-pos2idx_filepath: 
+train_filepath: 
+val_filepath: 
+gp2idx_filepath: data/gpp2idx.txt
+chr2idx_filepath: data/chr2idx.txt
+pos2idx_filepath: data/pos2idx.txt
 
 
 # TORCH MODEL
@@ -19,7 +19,7 @@ torch_model:
   enc_emb_dim_chr: 128
   enc_emb_dim_pos: 64
   dec_emb_dim: 128
-  pos_linear: 512
+  pos_linear: 256
   pos_final: 128
   encgru:
     hidden_size: 1024
@@ -27,7 +27,7 @@ torch_model:
   enc_take_last: false
   decgru:
     hidden_size: 1024
-  cls_lin_dim: 1024
+  cls_lin_dim: 512
   max_steps: 40
 
 
@@ -74,11 +74,11 @@ trainer:
 
 # EXPERIMENTS
 exp:
-  folder: exp-pos
+  folder: exp
   finetune:
     use: false
     ckpt: 
-  annotation: finetune
+  annotation: 
   epoch: 50
   wandb:
     use: false
